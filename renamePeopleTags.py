@@ -74,6 +74,16 @@ def process_main_options():
 
 
 def get_peopletag(filename):
+    """ Get the set of tags in `filename`. The tags are collected from
+    following tag ids:
+        - 'Xmp.digiKam.TagsList' (XmpSeq)
+        - 'Xmp.lr.hierarchicalSubject' (XmpText)
+        - 'Xmp.mwg-rs.Regions/mwg-rs:RegionList[i]/mwg-rs:Name' (XmpText)
+        - 'Xmp.MP.RegionInfo/MPRI:Regions[i]/MPReg:PersonDisplayName' (XmpText)
+        - 'Xmp.MicrosoftPhoto.LastKeywordXMP' (XmpBag)
+        - 'Xmp.dc.subject' (XmpBag)
+        - 'Xmp.mediapro.CatalogSets' (XmpBag)
+    """
     peoples = set()
     try:
         image = GExiv2.Metadata(filename)
@@ -81,10 +91,13 @@ def get_peopletag(filename):
         pass
     else:
         tags = image.get_tag_multiple('Xmp.digiKam.TagsList')
+        tags.extend(image.get_tag_multiple('Xmp.MicrosoftPhoto.LastKeywordXMP'))
+        tags.extend(image.get_tag_multiple('Xmp.dc.subject'))
         for t in tags:
             peoples.add(t)
         tags = image.get_tag_string('Xmp.lr.hierarchicalSubject')
         tags = tags.split(', ') if tags else []
+        tags.extend(image.get_tag_multiple('Xmp.mediapro.CatalogSets'))
         for t in tags:
             nt = t.replace('|', '/')
             peoples.add(nt)
@@ -123,26 +136,52 @@ def rename_peopletag_collection(files):
 
 
 def write_people_tags(filename, taglist, renameinfo):
+    """ Rename the  tags in `filename`. The tags listed in taglist
+    following tag ids:
+        - 'Xmp.digiKam.TagsList' (XmpSeq)
+        - 'Xmp.lr.hierarchicalSubject' (XmpText)
+        - 'Xmp.mwg-rs.Regions/mwg-rs:RegionList[i]/mwg-rs:Name' (XmpText)
+        - 'Xmp.MP.RegionInfo/MPRI:Regions[i]/MPReg:PersonDisplayName' (XmpText)
+        - 'Xmp.MicrosoftPhoto.LastKeywordXMP' (XmpBag)
+        - 'Xmp.dc.subject' (XmpBag)
+        - 'Xmp.mediapro.CatalogSets' (XmpBag)
+        - 'Xmp.acdsee.categories' (XmpText)
+        - 'Iptc.Application2.Keywords' (String)
+    """
     try:
         image = GExiv2.Metadata(filename)
     except GLib.Error:
         pass
     else:
         logging.debug(taglist)
+        # Handle XmpBag and XmpSeq tags
         image.set_tag_multiple('Xmp.digiKam.TagsList', taglist)
-        logging.debug(taglist)
+        image.set_tag_multiple('Xmp.dc.subject', taglist)
+        image.set_tag_multiple('Xmp.MicrosoftPhoto.LastKeywordXMP', taglist)
+        # Handle simple String tags
+        image.set_tag_string('Iptc.Application2.Keywords', ', '.join(taglist))
+
+        # Handle specific hierarchicalSubject separator
         ntlist = []
         for t in taglist:
             ntlist.append(t.replace('/', '|'))
         logging.debug(ntlist)
-        image.set_tag_multiple('Xmp.lr.hierarchicalSubject', [])
+        image.set_tag_multiple('Xmp.mediapro.CatalogSets', ntlist)
+        image.set_tag_multiple('Xmp.lr.hierarchicalSubject', []) # seems to bug without
         image.set_tag_string('Xmp.lr.hierarchicalSubject', ', '.join(ntlist))
+        # Handle Rectangular area names
         pt = [t for t in image.get_tags()
               if 'MPReg:PersonDisplayName' in t or 'mwg-rs:Name' in t]
         for t in pt:
             name = image.get(t)
             if name in renameinfo:
                 image.set_tag_string(t, renameinfo[name])
+        # Handle xml content by simply trying to replace everything
+        acdsee = image.get('Xmp.acdsee.categories')
+        for name in renameinfo:
+            acdsee = acdsee.replace(name, renameinfo[name])
+        image.set_tag_string('Xmp.acdsee.categories', acdsee)
+
         image.save_file()
         image.free()
 

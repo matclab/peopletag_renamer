@@ -31,6 +31,11 @@ teardown() {
    run "$EXE" collect -d out -o renamed_people.yaml
    assert_success
    assert_file_equals expected/renamed_people.yaml renamed_people.yaml
+   if exiv2 pr -p a out/empty.jpg |grep -i " john"; then
+      echo -E "out/empty.jpg should not contain any instance of John"
+      return 1
+   fi
+
 }
 
 load utils
