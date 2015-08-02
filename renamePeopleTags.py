@@ -2,7 +2,7 @@
 # -*- coding: utf8 -*-
 
 __version__ = 0.1
-REPO = '/home/clabaut/Images'
+REPO = '~/Pictures'
 
 from gi.repository import GExiv2, GLib
 import sys
@@ -21,39 +21,57 @@ logger = logging.getLogger()
 def process_main_options():
     global options
     options.verbose = logging.WARNING
-    parser = ArgumentParser(description="Rename or collect tags of people in photos.")
+    parser = ArgumentParser(
+        description="Rename or collect tags of people in photos.")
     # first retrieve config file if any :
-    _version= "renamePeopleTags {0} -- {1} {2}".format(__version__,
-            platform.python_implementation(), platform.python_version())
+    _version = "renamePeopleTags {0} -- {1} {2}".format(
+        __version__, platform.python_implementation(),
+        platform.python_version())
     parser.add_argument('-d', '--directory',
-            help="Directory scanned for photos", default=REPO)
+                        help="Directory scanned for photos (%(default)s)",
+                        default=REPO)
     parser.add_argument('-o', '--output',
-            help="Output yaml files", default="people.yaml")
+                        help="Output yaml files (%(default)s)",
+                        default="people.yaml")
     parser.add_argument('-i', '--input',
                         help="Input yaml files with renaming info. "
                         "The content should be a dictionary "
-                        "{oldtag1: newtag1, oldtag2; newtag2}",
+                        "{oldtag1: newtag1, oldtag2; newtag2} (%(default)s)",
                         default="rename.yaml")
-    parser.add_argument('action', choices=['collect', 'rename'], help="Collect or rename tags",
+    parser.add_argument('action',
+                        choices=['collect', 'rename'],
+                        help="Collect or rename tags (%(default)s)",
                         default='collect')
-    parser.add_argument("--locations",
-                        action="store_const", const=True, default=False,
-                        help="Add tag locations in collected file")
+    parser.add_argument(
+        "--locations",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Add tag locations in collected file (%(default)s)")
     parser.add_argument("-q", "--quiet",
-            action="store_const", const=logging.CRITICAL, dest="verbose",
-            help="don't print status messages to stderr")
+                        action="store_const",
+                        const=logging.CRITICAL,
+                        dest="verbose",
+                        help="don't print status messages to stderr")
     parser.add_argument("-w", "--warning",
-            action="store_const", const=logging.WARNING, dest="verbose",
-            help="output warning information to stderr (default)")
+                        action="store_const",
+                        const=logging.WARNING,
+                        dest="verbose",
+                        help="output warning information to stderr (default)")
     parser.add_argument("-v", "--verbose",
-            action="store_const", const=logging.INFO, dest="verbose",
-            help="output verbose status (info) to stderr")
+                        action="store_const",
+                        const=logging.INFO,
+                        dest="verbose",
+                        help="output verbose status (info) to stderr")
     parser.add_argument("--debug",
-            action="store_const", const=logging.DEBUG, dest="verbose",
-            help="output debug information to stderr")
+                        action="store_const",
+                        const=logging.DEBUG,
+                        dest="verbose",
+                        help="output debug information to stderr")
     parser.add_argument('--version', action='version', version=_version)
     parser.parse_args(namespace=options)
     logger.setLevel(options.verbose)
+
 
 def get_peopletag(filename):
     peoples = set()
@@ -70,8 +88,8 @@ def get_peopletag(filename):
         for t in tags:
             nt = t.replace('|', '/')
             peoples.add(nt)
-        pt = [ t for t in image.get_tags() if
-            'MPReg:PersonDisplayName' in t or 'mwg-rs:Name' in t]
+        pt = [t for t in image.get_tags()
+              if 'MPReg:PersonDisplayName' in t or 'mwg-rs:Name' in t]
         for t in pt:
             peoples.add(image.get(t))
         image.free()
@@ -90,7 +108,7 @@ def rename_peopletag_collection(files):
     global options
     logger.info("Renaming tags")
     renameinfo = {}
-    with  open(options.input, 'r') as infile:
+    with open(options.input, 'r') as infile:
         renameinfo = yaml.load(infile)
     if not renameinfo:
         return
@@ -102,6 +120,7 @@ def rename_peopletag_collection(files):
             else:
                 taglist.append(t)
         write_people_tags(f, taglist, renameinfo)
+
 
 def write_people_tags(filename, taglist, renameinfo):
     try:
@@ -118,8 +137,8 @@ def write_people_tags(filename, taglist, renameinfo):
         logging.debug(ntlist)
         image.set_tag_multiple('Xmp.lr.hierarchicalSubject', [])
         image.set_tag_string('Xmp.lr.hierarchicalSubject', ', '.join(ntlist))
-        pt = [ t for t in image.get_tags() if
-            'MPReg:PersonDisplayName' in t or 'mwg-rs:Name' in t]
+        pt = [t for t in image.get_tags()
+              if 'MPReg:PersonDisplayName' in t or 'mwg-rs:Name' in t]
         for t in pt:
             name = image.get(t)
             if name in renameinfo:
@@ -136,8 +155,8 @@ def get_people_region_collection(files):
         except GLib.Error:
             pass
         else:
-            pt = [ t for t in image.get_tags() if
-                'MPReg:PersonDisplayName' in t or 'mwg-rs:Name' in t]
+            pt = [t for t in image.get_tags()
+                  if 'MPReg:PersonDisplayName' in t or 'mwg-rs:Name' in t]
             for t in pt:
                 peoples.add(image.get(t))
     return peoples
@@ -149,10 +168,11 @@ def collect_photoѕ():
     for subdir, dirs, files in os.walk(options.directory):
         if subdir != prevdir:
             logger.info("Collecting files in '%s'" % subdir)
-            prevdir=subdir
+            prevdir = subdir
         for f in files:
             photos.append(os.path.join(subdir, f))
     return photos
+
 
 def people_to_yaml(photos):
     global options
@@ -160,13 +180,18 @@ def people_to_yaml(photos):
     tags = get_peopletag_collection(photos)
     #print(sorted(list(tags))
     logger.info("Creating Yaml output '%s'" % options.output)
-    with  open(options.output, 'w') as outfile:
+    with open(options.output, 'w') as outfile:
         if options.locations:
-            yaml.dump(tags, outfile, encoding='utf-8',
-                    allow_unicode=True, default_flow_style=False)
+            yaml.dump(tags, outfile,
+                      encoding='utf-8',
+                      allow_unicode=True,
+                      default_flow_style=False)
         else:
-            yaml.dump(sorted(list(tags.keys())), outfile, encoding='utf-8',
-                    allow_unicode=True, default_flow_style=False)
+            yaml.dump(sorted(list(tags.keys())), outfile,
+                      encoding='utf-8',
+                      allow_unicode=True,
+                      default_flow_style=False)
+
 
 def main():
     global options
@@ -180,8 +205,8 @@ def main():
 
 def info(type, value, tb):
     if hasattr(sys, 'ps1') or not sys.stderr.isatty():
-    # we are in interactive mode or we don't have a tty-like
-    # device, so we call the default hook
+        # we are in interactive mode or we don't have a tty-like
+        # device, so we call the default hook
         sys.__excepthook__(type, value, tb)
     else:
         import traceback
@@ -195,14 +220,12 @@ def info(type, value, tb):
         except:
             import pdb
             # pdb.pm() # deprecated
-            pdb.post_mortem(tb) # more “modern”
+            pdb.post_mortem(tb)  # more “modern”
 
 #TODO : remove for production
-sys.excepthook = info
+#sys.excepthook = info
 
 if __name__ == "__main__":
     sys.exit(main())
 
-
 # vim: sw=4 sts=4 ts=4 et ai
-
