@@ -179,7 +179,7 @@ def write_people_tags(filename, taglist, renameinfo):
         # Handle xml content by simply trying to replace everything
         acdsee = image.get('Xmp.acdsee.categories')
         for name in renameinfo:
-            acdsee = acdsee.replace(name, renameinfo[name])
+            acdsee = acdsee.replace(">%s<" % name, ">%s<" % renameinfo[name])
         image.set_tag_string('Xmp.acdsee.categories', acdsee)
 
         image.save_file()
