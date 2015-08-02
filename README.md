@@ -1,8 +1,8 @@
-= Use Case =
+# Use Case 
 
 Rename a hierarchy of people tags in photographies.
 
-= Example of Use =
+# Example of Use 
 
 First, do a backup of your photos.
 
@@ -23,7 +23,7 @@ And the call the script to do the renaming:
 renamePeopleTags.py -d  ~/Images -i rename.yaml
 ```
 
-= Licence =
+# Licence 
 
 GPL v3
 
