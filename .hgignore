@@ -1,0 +1,11 @@
+syntax: glob
+# Ignore generated files
+tags
+
+# backup files
+*~
+*.bak
+*.save
+*.orig
+.*.swp
+~*
