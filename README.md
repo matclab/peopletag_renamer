@@ -23,6 +23,12 @@ And the call the script to do the renaming:
 renamePeopleTags.py -d  ~/Images -i rename.yaml
 ```
 
+# Tests
+Tests are developed with the help of the
+[bats framework](https://github.com/sstephenson/bats).
+
+Run `make` in the `tests` directory to run the test suites.
+
 # Licence 
 
 GPL v3

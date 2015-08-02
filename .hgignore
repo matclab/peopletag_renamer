@@ -1,6 +1,9 @@
 syntax: glob
 # Ignore generated files
 tags
+tests/out
+tests/people.yaml
+tests/renamed_people.yaml
 
 # backup files
 *~
@@ -9,3 +12,5 @@ tags
 *.orig
 .*.swp
 ~*
+
+
